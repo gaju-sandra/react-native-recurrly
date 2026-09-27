@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="projectPath" value="C:\Users\user\Documents\Internship at BK\others\recurlly-native-react" />
+              <option name="provider" value="claude" />
+              <option name="sessionId" value="680e24c7-792b-4881-a63c-8085904297a0" />
+              <option name="cwd" value="C:\Users\user\Documents\Internship at BK\others\recurlly-native-react" />
+              <option name="model" value="claude-sonnet-5[1m]" />
+              <option name="permissionMode" value="default" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
