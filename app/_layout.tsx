@@ -43,6 +43,8 @@ function AuthGuard() {
     if (!isLoaded || !isUserLoaded) return;
 
     if (!isSignedIn) {
+      // Covers sign-outs that don't go through Settings (expired or revoked sessions).
+      if (identifiedUserId.current) posthog?.reset();
       identifiedUserId.current = null;
       return;
     }
