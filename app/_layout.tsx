@@ -1,6 +1,6 @@
 import { ClerkProvider, useAuth, useUser } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { SplashScreen } from "expo-router";
 import '@/global.css';
 import { useFonts } from "expo-font";
@@ -21,7 +21,13 @@ function AuthGuard() {
   const { user, isLoaded: isUserLoaded } = useUser();
   const segments = useSegments();
   const router = useRouter();
+  const pathname = usePathname();
   const identifiedUserId = useRef<string | null>(null);
+
+  // expo-router hides the NavigationContainer, so PostHog can't auto-capture screens.
+  useEffect(() => {
+    posthog?.screen(pathname);
+  }, [pathname]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -81,5 +87,9 @@ export default function RootLayout() {
     </ClerkProvider>
   );
 
-  return posthog ? <PostHogProvider client={posthog}>{app}</PostHogProvider> : app;
+  return posthog ? (
+    <PostHogProvider client={posthog} autocapture={{ captureScreens: false }} debug={__DEV__}>
+      {app}
+    </PostHogProvider>
+  ) : app;
 }

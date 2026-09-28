@@ -21,6 +21,9 @@ export const posthog =
   projectToken && host
     ? new PostHog(projectToken, {
         host,
+        captureAppLifecycleEvents: true,
+        // Send each event right away in dev so it shows up in PostHog Activity immediately.
+        ...(__DEV__ && {flushAt: 1}),
         errorTracking: {
           autocapture: {
             uncaughtExceptions: true,

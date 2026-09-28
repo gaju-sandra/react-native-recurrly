@@ -13,6 +13,7 @@ import clsx from "clsx";
 import dayjs from "dayjs";
 import {icons} from "@/constants/icons";
 import {colors} from "@/constants/theme";
+import {posthog} from "@/lib/posthog";
 
 const FREQUENCIES: SubscriptionFrequency[] = ['Monthly', 'Yearly'];
 
@@ -69,6 +70,13 @@ const CreateSubscriptionModal = ({visible, onClose, onCreate}: CreateSubscriptio
 
         const startDate = dayjs();
         const renewalDate = startDate.add(1, frequency === 'Monthly' ? 'month' : 'year');
+
+        posthog?.capture('subscription_created', {
+            subscription_name: name.trim(),
+            price: parsedPrice,
+            frequency,
+            category,
+        });
 
         onCreate({
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
