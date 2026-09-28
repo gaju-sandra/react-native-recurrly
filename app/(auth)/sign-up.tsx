@@ -100,7 +100,6 @@ export default function SignUp() {
         lastName: nameParts.slice(1).join(' ') || undefined,
       });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      posthog?.capture('account_created');
       setPendingVerification(true);
     } catch (err: any) {
       const msg = err?.errors?.[0]?.longMessage ?? err?.errors?.[0]?.message ?? 'Sign up failed.';
@@ -120,7 +119,9 @@ export default function SignUp() {
       console.log('verify status:', result.status, 'sessionId:', result.createdSessionId);
       if (result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
+        // Only count the account once it's verified and the session is active.
         posthog?.capture('email_verification_completed');
+        posthog?.capture('account_created');
         router.replace('/(tabs)');
       } else {
         setError(`Unexpected status: ${result.status}. Please try again.`);
