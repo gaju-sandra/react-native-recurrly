@@ -6,6 +6,7 @@ import { styled } from 'nativewind';
 import { useState } from 'react';
 import images from '@/constants/image';
 import { colors } from '@/constants/theme';
+import { posthog } from '@/lib/posthog';
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -21,7 +22,9 @@ export default function Settings() {
   const onSignOut = async () => {
     try {
       setSigningOut(true);
+      posthog?.capture('user_signed_out');
       await signOut();
+      posthog?.reset();
       router.replace('/(auth)/sign-in');
     } catch (e) {
       setSigningOut(false);

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { posthog } from '@/lib/posthog';
 
 const s = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: colors.background },
@@ -99,6 +100,7 @@ export default function SignUp() {
         lastName: nameParts.slice(1).join(' ') || undefined,
       });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      posthog?.capture('account_created');
       setPendingVerification(true);
     } catch (err: any) {
       const msg = err?.errors?.[0]?.longMessage ?? err?.errors?.[0]?.message ?? 'Sign up failed.';
@@ -118,6 +120,7 @@ export default function SignUp() {
       console.log('verify status:', result.status, 'sessionId:', result.createdSessionId);
       if (result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
+        posthog?.capture('email_verification_completed');
         router.replace('/(tabs)');
       } else {
         setError(`Unexpected status: ${result.status}. Please try again.`);
@@ -168,7 +171,11 @@ export default function SignUp() {
               <TouchableOpacity
                 style={s.btnSecondary}
                 onPress={async () => {
-                  try { await signUp.prepareEmailAddressVerification({ strategy: 'email_code' }); }
+                  if (!signUp) return;
+                  try {
+                    await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+                    posthog?.capture('email_verification_resent');
+                  }
                   catch (e) { /* verification already exists, ignore */ }
                 }}
                 activeOpacity={0.7}

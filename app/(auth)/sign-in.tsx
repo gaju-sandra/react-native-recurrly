@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { posthog } from '@/lib/posthog';
 
 const s = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: colors.background },
@@ -54,6 +55,7 @@ export default function SignIn() {
       const result = await signIn.create({ identifier: email.trim(), password });
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
+        posthog?.capture('user_signed_in');
         router.replace('/(tabs)');
       } else {
         setError('Sign in incomplete. Please try again.');
