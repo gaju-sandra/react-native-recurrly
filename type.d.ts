@@ -12,6 +12,8 @@ declare global {
         icon: ImageSourcePropType;
     }
 
+    type SubscriptionFrequency = "Monthly" | "Yearly";
+
     interface Subscription {
         id: string;
         icon: ImageSourcePropType;
@@ -24,6 +26,7 @@ declare global {
         price: number;
         currency?: string;
         billing: string;
+        frequency?: SubscriptionFrequency;
         renewalDate?: string;
         color?: string;
     }
@@ -49,6 +52,18 @@ declare global {
 
     interface ListHeadingProps {
         title: string;
+    }
+
+    interface CreateSubscriptionModalProps {
+        visible: boolean;
+        onClose: () => void;
+        onCreate: (subscription: Subscription) => void;
+    }
+
+    interface SearchBarProps {
+        value: string;
+        onChangeText: (value: string) => void;
+        placeholder?: string;
     }
 }
 

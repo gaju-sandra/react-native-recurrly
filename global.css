@@ -228,6 +228,30 @@
         @apply font-sans-bold text-background;
     }
 
+    .search-bar {
+        @apply flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-1;
+    }
+
+    .search-icon {
+        @apply text-base opacity-60;
+    }
+
+    .search-input {
+        @apply flex-1 py-3 text-base font-sans-medium text-primary;
+    }
+
+    .search-clear {
+        @apply size-6 items-center justify-center rounded-full bg-muted;
+    }
+
+    .search-clear-text {
+        @apply text-sm font-sans-bold text-muted-foreground;
+    }
+
+    .search-count {
+        @apply mt-3 text-sm font-sans-medium text-muted-foreground;
+    }
+
     .home-empty-state {
         @apply py-4 text-sm font-sans-medium text-black/60;
     }

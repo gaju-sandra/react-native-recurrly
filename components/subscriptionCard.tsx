@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, Pressable} from 'react-native';
-import {Image} from "expo-image";
+import SubscriptionIcon from "@/components/SubscriptionIcon";
 import {formatCurrency, formatStatusLabel, formatSubscriptionDateTime} from "@/lib/utils";
 import clsx from "clsx";
 
@@ -13,7 +13,7 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
             backgroundColor: color}: undefined}>
       <View className= "sub-head">
           <View className="sub-main">
-              <Image source={icon} className="sub-icon" />
+              <SubscriptionIcon name={name} fallback={icon} className="sub-icon" />
               <View className="sub-copy">
                   <Text numberOfLines={1}className="sub-title">
                       {name}
@@ -36,7 +36,7 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
 
         {expanded &&
             (
-                <View className="sub-bdy">
+                <View className="sub-body">
                     <View className="sub-details">
                         <View className="sub-row">
                         <View className="sub-row-copy">
