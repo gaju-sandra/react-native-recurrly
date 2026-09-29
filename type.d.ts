@@ -12,35 +12,36 @@ declare global {
         icon: ImageSourcePropType;
     }
 
-    type SubscriptionFrequency = "Monthly" | "Yearly";
+    type SubscriptionFrequency = "Weekly" | "Monthly" | "Quarterly" | "Yearly";
 
+    type SubscriptionStatus = "active" | "trial" | "paused" | "cancelled";
+
+    // What is stored in the database. Renewal dates are derived from
+    // startDate + frequency (see lib/subscriptions.ts), so they never go stale.
     interface Subscription {
         id: string;
-        icon: ImageSourcePropType;
         name: string;
         plan?: string;
         category?: string;
         paymentMethod?: string;
-        status?: string;
-        startDate?: string;
+        status: SubscriptionStatus;
+        startDate: string;
         price: number;
         currency?: string;
-        billing: string;
-        frequency?: SubscriptionFrequency;
-        renewalDate?: string;
+        frequency: SubscriptionFrequency;
+        trialEndsAt?: string;
+        notes?: string;
         color?: string;
     }
 
     interface SubscriptionCardProps extends Omit<Subscription, "id"> {
         expanded: boolean;
         onPress: () => void;
-        onCancelPress?: () => void;
-        isCancelling?: boolean;
+        onManagePress?: () => void;
     }
 
     interface UpcomingSubscription {
         id: string;
-        icon: ImageSourcePropType;
         name: string;
         price: number;
         currency?: string;
@@ -52,12 +53,20 @@ declare global {
 
     interface ListHeadingProps {
         title: string;
+        onViewAll?: () => void;
+    }
+
+    interface DailySpending {
+        day: string;
+        amount: number;
     }
 
     interface CreateSubscriptionModalProps {
         visible: boolean;
         onClose: () => void;
-        onCreate: (subscription: Subscription) => void;
+        onSubmit: (subscription: Subscription) => Promise<void>;
+        // When set, the modal edits this subscription instead of creating a new one.
+        initialValue?: Subscription;
     }
 
     interface SearchBarProps {

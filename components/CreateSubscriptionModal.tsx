@@ -1,5 +1,6 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
+    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -11,11 +12,11 @@ import {
 } from 'react-native';
 import clsx from "clsx";
 import dayjs from "dayjs";
-import {icons} from "@/constants/icons";
+import * as Crypto from "expo-crypto";
 import {colors} from "@/constants/theme";
 import {posthog} from "@/lib/posthog";
 
-const FREQUENCIES: SubscriptionFrequency[] = ['Monthly', 'Yearly'];
+const FREQUENCIES: SubscriptionFrequency[] = ['Weekly', 'Monthly', 'Quarterly', 'Yearly'];
 
 const CATEGORIES = [
     'Entertainment',
@@ -43,56 +44,62 @@ const CATEGORY_COLORS: Record<SubscriptionCategory, string> = {
 
 const parsePrice = (value: string) => Number(value.replace(',', '.').trim());
 
-const CreateSubscriptionModal = ({visible, onClose, onCreate}: CreateSubscriptionModalProps) => {
+const toCategory = (value?: string): SubscriptionCategory =>
+    CATEGORIES.find((option) => option === value) ?? 'Other';
+
+// One form for both creating and editing: pass `initialValue` to edit.
+const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: CreateSubscriptionModalProps) => {
+    const isEditing = Boolean(initialValue);
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
     const [frequency, setFrequency] = useState<SubscriptionFrequency>('Monthly');
     const [category, setCategory] = useState<SubscriptionCategory>('Entertainment');
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Fill the form each time it opens: with the subscription being edited, or empty.
+    useEffect(() => {
+        if (!visible) return;
+        setName(initialValue?.name ?? '');
+        setPrice(initialValue ? String(initialValue.price) : '');
+        setFrequency(initialValue?.frequency ?? 'Monthly');
+        setCategory(initialValue ? toCategory(initialValue.category) : 'Entertainment');
+    }, [visible, initialValue]);
 
     const parsedPrice = parsePrice(price);
     const isValid = name.trim().length > 0 && price.trim().length > 0
         && Number.isFinite(parsedPrice) && parsedPrice > 0;
 
-    const resetForm = () => {
-        setName('');
-        setPrice('');
-        setFrequency('Monthly');
-        setCategory('Entertainment');
-    };
+    const handleSubmit = async () => {
+        if (!isValid || isSaving) return;
 
-    const handleClose = () => {
-        resetForm();
-        onClose();
-    };
-
-    const handleSubmit = () => {
-        if (!isValid) return;
-
-        const startDate = dayjs();
-        const renewalDate = startDate.add(1, frequency === 'Monthly' ? 'month' : 'year');
-
-        posthog?.capture('subscription_created', {
-            subscription_name: name.trim(),
-            price: parsedPrice,
-            frequency,
-            category,
-        });
-
-        onCreate({
-            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        const fields = {
             name: name.trim(),
             price: parsedPrice,
             frequency,
             category,
-            status: 'active',
-            startDate: startDate.toISOString(),
-            renewalDate: renewalDate.toISOString(),
-            icon: icons.wallet,
-            billing: frequency,
             color: CATEGORY_COLORS[category],
-        });
+        };
 
-        handleClose();
+        // Editing keeps id, status, startDate, etc. and only replaces the form fields.
+        const subscription: Subscription = initialValue
+            ? {...initialValue, ...fields}
+            : {...fields, id: Crypto.randomUUID(), status: 'active', startDate: dayjs().toISOString()};
+
+        try {
+            setIsSaving(true);
+            await onSubmit(subscription);
+            posthog?.capture(isEditing ? 'subscription_updated' : 'subscription_created', {
+                subscription_name: fields.name,
+                price: fields.price,
+                frequency,
+                category,
+            });
+            onClose();
+        } catch {
+            Alert.alert('Could not save', 'Something went wrong saving this subscription. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -100,19 +107,19 @@ const CreateSubscriptionModal = ({visible, onClose, onCreate}: CreateSubscriptio
             visible={visible}
             animationType="slide"
             transparent
-            onRequestClose={handleClose}
+            onRequestClose={onClose}
         >
             <KeyboardAvoidingView
                 className="flex-1"
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <View className="modal-overlay">
-                    <Pressable className="flex-1" onPress={handleClose} accessibilityLabel="Close"/>
+                    <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close"/>
 
                     <View className="modal-container">
                         <View className="modal-header">
-                            <Text className="modal-title">New Subscription</Text>
-                            <Pressable className="modal-close" onPress={handleClose} hitSlop={8}
+                            <Text className="modal-title">{isEditing ? 'Edit Subscription' : 'New Subscription'}</Text>
+                            <Pressable className="modal-close" onPress={onClose} hitSlop={8}
                                        accessibilityLabel="Close">
                                 <Text className="modal-close-text">✕</Text>
                             </Pressable>
@@ -190,11 +197,13 @@ const CreateSubscriptionModal = ({visible, onClose, onCreate}: CreateSubscriptio
                             </View>
 
                             <Pressable
-                                className={clsx('auth-button', !isValid && 'auth-button-disabled')}
+                                className={clsx('auth-button', (!isValid || isSaving) && 'auth-button-disabled')}
                                 onPress={handleSubmit}
-                                disabled={!isValid}
+                                disabled={!isValid || isSaving}
                             >
-                                <Text className="auth-button-text">Add Subscription</Text>
+                                <Text className="auth-button-text">
+                                    {isEditing ? 'Save Changes' : 'Add Subscription'}
+                                </Text>
                             </Pressable>
                         </ScrollView>
                     </View>

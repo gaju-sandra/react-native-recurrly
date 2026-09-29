@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { colors } from "@/constants/theme";
 
-const Listheading = ({title}:ListHeadingProps) => {
+const Listheading = ({title, onViewAll}:ListHeadingProps) => {
   return (
-    <View>
+    <View className="list-head">
       <Text className="list-title" style={{color: colors.primary}}>{title}</Text>
-        <TouchableOpacity className="list-actions">
+        <TouchableOpacity className="list-action" onPress={onViewAll} disabled={!onViewAll}>
             <Text className="list-action-text">View all</Text>
         </TouchableOpacity>
     </View>

@@ -1,15 +1,14 @@
 import "@/global.css"
 
 import {FlatList, Image, Pressable, Text, View} from "react-native";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import {SafeAreaView as RNSafeAreaView} from "react-native-safe-area-context";
 import { styled } from "nativewind";
 import images from '@/constants/image';
-import {HOME_BALANCE, UPCOMING_SUBSCRIPTIONS} from "@/constants/data";
 import {useSubscriptions} from "@/context/SubscriptionsContext";
 import {icons} from "@/constants/icons";
 import {formatCurrency} from "@/lib/utils";
-import dayjs from "dayjs";
+import {getMonthlySpend, getNextRenewal, getUpcoming} from "@/lib/subscriptions";
 import Listheading from "@/components/listheading";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import SubscriptionCard from "@/components/subscriptionCard";
@@ -28,6 +27,9 @@ export default function App() {
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const { user } = useUser();
     const displayName = user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ?? 'there';
+    const monthlySpend = getMonthlySpend(subscriptions);
+    const nextRenewal = getNextRenewal(subscriptions);
+    const upcoming = getUpcoming(subscriptions);
     return (
         <SafeAreaView className="flex-1 bg-background p-5">
 
@@ -49,14 +51,16 @@ export default function App() {
                                 </Pressable>
                             </View>
                             <View className="home-balance-card">
-                                <Text className="home-balnce-label">Balance</Text>
+                                <Text className="home-balnce-label">This month</Text>
                                 <View className="home-balance-row">
                                     <Text className="home-balance-amount">
-                                        {formatCurrency(HOME_BALANCE.amount)}
+                                        {formatCurrency(monthlySpend)}
                                     </Text>
-                                    <Text className="home-balance-date">
-                                        {dayjs(HOME_BALANCE.nextRenewalDate).format('MM/DD')}
-                                    </Text>
+                                    {nextRenewal && (
+                                        <Text className="home-balance-date">
+                                            {nextRenewal.format('MM/DD')}
+                                        </Text>
+                                    )}
                                 </View>
 
                             </View>
@@ -64,7 +68,7 @@ export default function App() {
 
                                 <Listheading title="Upcoming" />
                                 <FlatList
-                                    data={UPCOMING_SUBSCRIPTIONS} renderItem={({item})=>(<UpcomingSubscriptionCard {...item} />
+                                    data={upcoming} renderItem={({item})=>(<UpcomingSubscriptionCard {...item} />
                                 )}
                                     keyExtractor={(item)=> item.id}
                                     horizontal
@@ -82,6 +86,7 @@ export default function App() {
                         === item.id}
                         onPress={()=> setExpandedSubscriptionId((currentId)=>
                             (currentId === item.id ? null : item.id))}
+                        onManagePress={() => router.push(`/subscriptions/${item.id}`)}
                         />
                     )}
                     extraData={expandedSubscriptionId}
@@ -98,7 +103,7 @@ export default function App() {
                 <CreateSubscriptionModal
                     visible={isCreateModalVisible}
                     onClose={() => setIsCreateModalVisible(false)}
-                    onCreate={addSubscription}
+                    onSubmit={addSubscription}
                 />
 
         </SafeAreaView>

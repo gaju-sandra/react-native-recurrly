@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {FlatList, Keyboard, KeyboardAvoidingView, Platform, Text, View} from 'react-native';
 import {SafeAreaView as RNSafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import { styled } from "nativewind";
+import {router} from "expo-router";
 import {useSubscriptions} from "@/context/SubscriptionsContext";
 import {components, spacing} from "@/constants/theme";
 import SubscriptionCard from "@/components/subscriptionCard";
@@ -27,7 +28,7 @@ const Subscriptions = () => {
                 subscription.name,
                 subscription.plan,
                 subscription.category,
-                subscription.billing,
+                subscription.frequency,
                 subscription.status,
             ]
                 .filter(Boolean)
@@ -80,6 +81,7 @@ const Subscriptions = () => {
                             {...item}
                             expanded={expandedSubscriptionId === item.id}
                             onPress={() => handleCardPress(item.id)}
+                            onManagePress={() => router.push(`/subscriptions/${item.id}`)}
                         />
                     )}
                     extraData={expandedSubscriptionId}
