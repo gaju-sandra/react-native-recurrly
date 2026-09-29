@@ -447,4 +447,128 @@
     .category-chip-text-active {
         @apply text-accent;
     }
+
+    .insights-header {
+        @apply mb-2 flex-row items-center justify-between;
+    }
+
+    .insights-icon-button {
+        @apply size-12 items-center justify-center rounded-full border border-border;
+    }
+
+    .insights-icon-button-image {
+        @apply size-5;
+    }
+
+    .insights-title {
+        @apply text-xl font-sans-bold text-primary;
+    }
+
+    .insights-chart-card {
+        @apply rounded-3xl bg-muted px-3 py-4;
+    }
+
+    .insights-expense-card {
+        @apply mt-5 flex-row items-center justify-between rounded-2xl border border-border bg-card p-4;
+    }
+
+    .insights-expense-title {
+        @apply text-lg font-sans-bold text-primary;
+    }
+
+    .insights-expense-meta {
+        @apply mt-1 text-sm font-sans-medium text-muted-foreground;
+    }
+
+    .insights-history-card {
+        @apply flex-row items-center rounded-2xl border border-border bg-card p-4;
+    }
+
+    .insights-history-icon {
+        @apply size-14 rounded-lg;
+    }
+
+    .insights-history-copy {
+        @apply ml-3 min-w-0 flex-1;
+    }
+
+    .insights-history-name {
+        @apply text-lg font-sans-bold text-primary;
+    }
+
+    .insights-history-meta {
+        @apply mt-1 text-sm font-sans-medium text-muted-foreground;
+    }
+
+    .insights-history-price-box {
+        @apply ml-3 shrink-0 items-end;
+    }
+
+    .settings-profile-card {
+        @apply flex-row items-center gap-4 rounded-bl-4xl rounded-tr-4xl bg-accent p-5;
+    }
+
+    .settings-avatar {
+        @apply size-16 rounded-full;
+    }
+
+    .settings-profile-name {
+        @apply text-xl font-sans-bold text-white;
+    }
+
+    .settings-profile-email {
+        @apply mt-1 text-sm font-sans-medium text-white/80;
+    }
+
+    .settings-stats-row {
+        @apply mt-4 flex-row gap-3;
+    }
+
+    .settings-stat {
+        @apply flex-1 rounded-2xl border border-border bg-card p-4;
+    }
+
+    .settings-stat-value {
+        @apply text-xl font-sans-extrabold text-primary;
+    }
+
+    .settings-stat-label {
+        @apply mt-1 text-sm font-sans-medium text-muted-foreground;
+    }
+
+    .settings-section-title {
+        @apply mb-2 mt-6 text-xs font-sans-semibold uppercase tracking-[1px] text-muted-foreground;
+    }
+
+    .settings-group {
+        @apply rounded-2xl border border-border bg-card;
+    }
+
+    .settings-row {
+        @apply flex-row items-center justify-between gap-3 px-4 py-4;
+    }
+
+    .settings-row-divider {
+        @apply border-t border-border;
+    }
+
+    .settings-row-label {
+        @apply text-base font-sans-medium text-primary;
+    }
+
+    .settings-row-value {
+        @apply shrink text-right text-base font-sans-semibold text-muted-foreground;
+    }
+
+    .settings-signout {
+        @apply mt-8 items-center rounded-2xl bg-destructive py-4;
+    }
+
+    .settings-signout-disabled {
+        @apply bg-destructive/60;
+    }
+
+    .settings-signout-text {
+        @apply text-base font-sans-bold text-white;
+    }
 }

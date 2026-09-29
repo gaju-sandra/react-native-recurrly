@@ -1,17 +1,18 @@
 {
   "expo": {
-    "name": "recurlly-native-react",
-    "slug": "recurlly-native-react",
+    "name": "Recurly",
+    "slug": "Recurly",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/logo.png",
     "scheme": "recurllynativereact",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.gaju.recurlly",
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.recurlly.app",
+      "package": "com.gaju.recurlly",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -25,12 +26,14 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-sqlite",
+      "expo-notifications",
       "expo-router",
       [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splash-pattern.png",
           "imageWidth": 76
         }
       ],
