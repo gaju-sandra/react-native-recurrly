@@ -1,3 +1,4 @@
+
 import type { SQLiteDatabase } from "expo-sqlite";
 
 // Bump this and add a new `if (currentVersion === N)` block whenever the schema changes.

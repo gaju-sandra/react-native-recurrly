@@ -7,8 +7,8 @@ import {icons} from "@/constants/icons";
 import {getNextRenewalDate} from "@/lib/subscriptions";
 
 const SubscriptionCard = ({name, price, currency, frequency, color, category,
-                              plan, expanded, onPress, onManagePress, paymentMethod, startDate, status }: SubscriptionCardProps)=> {
-  const renewalDate = getNextRenewalDate(startDate, frequency).toISOString();
+                              plan, expanded, onPress, onManagePress, paymentMethod, startDate, status, trialEndsAt }: SubscriptionCardProps)=> {
+  const renewalDate = getNextRenewalDate({startDate, frequency, status, trialEndsAt}).toISOString();
 
   return (
 

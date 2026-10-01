@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
     Alert,
     KeyboardAvoidingView,
@@ -15,8 +15,16 @@ import dayjs from "dayjs";
 import * as Crypto from "expo-crypto";
 import {colors} from "@/constants/theme";
 import {posthog} from "@/lib/posthog";
+import DateField from "@/components/DateField";
 
 const FREQUENCIES: SubscriptionFrequency[] = ['Weekly', 'Monthly', 'Quarterly', 'Yearly'];
+
+// Cancelling is done from the detail screen, so the form only offers these.
+const STATUSES: {value: SubscriptionStatus; label: string}[] = [
+    {value: 'active', label: 'Active'},
+    {value: 'trial', label: 'Free trial'},
+    {value: 'paused', label: 'Paused'},
+];
 
 const CATEGORIES = [
     'Entertainment',
@@ -54,20 +62,35 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
     const [price, setPrice] = useState('');
     const [frequency, setFrequency] = useState<SubscriptionFrequency>('Monthly');
     const [category, setCategory] = useState<SubscriptionCategory>('Entertainment');
+    const [status, setStatus] = useState<SubscriptionStatus>('active');
+    const [startDate, setStartDate] = useState(new Date());
+    const [trialEndsAt, setTrialEndsAt] = useState(new Date());
     const [isSaving, setIsSaving] = useState(false);
+    const [wasVisible, setWasVisible] = useState(false);
 
     // Fill the form each time it opens: with the subscription being edited, or empty.
-    useEffect(() => {
-        if (!visible) return;
-        setName(initialValue?.name ?? '');
-        setPrice(initialValue ? String(initialValue.price) : '');
-        setFrequency(initialValue?.frequency ?? 'Monthly');
-        setCategory(initialValue ? toCategory(initialValue.category) : 'Entertainment');
-    }, [visible, initialValue]);
+    // Done during render rather than in an effect, so there's no extra render with stale values.
+    if (visible !== wasVisible) {
+        setWasVisible(visible);
+        if (visible) {
+            setName(initialValue?.name ?? '');
+            setPrice(initialValue ? String(initialValue.price) : '');
+            setFrequency(initialValue?.frequency ?? 'Monthly');
+            setCategory(initialValue ? toCategory(initialValue.category) : 'Entertainment');
+            setStatus(initialValue?.status ?? 'active');
+            setStartDate(initialValue ? dayjs(initialValue.startDate).toDate() : new Date());
+            // Most free trials last a week, so that's the default.
+            setTrialEndsAt(initialValue?.trialEndsAt
+                ? dayjs(initialValue.trialEndsAt).toDate()
+                : dayjs().add(7, 'day').toDate());
+        }
+    }
 
+    const isTrial = status === 'trial';
     const parsedPrice = parsePrice(price);
     const isValid = name.trim().length > 0 && price.trim().length > 0
-        && Number.isFinite(parsedPrice) && parsedPrice > 0;
+        && Number.isFinite(parsedPrice) && parsedPrice > 0
+        && (!isTrial || !dayjs(trialEndsAt).isBefore(startDate, 'day'));
 
     const handleSubmit = async () => {
         if (!isValid || isSaving) return;
@@ -77,13 +100,17 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
             price: parsedPrice,
             frequency,
             category,
+            status,
+            startDate: dayjs(startDate).startOf('day').toISOString(),
+            // Only trials have an end date; clear it if the status changed.
+            trialEndsAt: isTrial ? dayjs(trialEndsAt).startOf('day').toISOString() : undefined,
             color: CATEGORY_COLORS[category],
         };
 
-        // Editing keeps id, status, startDate, etc. and only replaces the form fields.
+        // Editing keeps id, paymentMethod, notes, etc. and only replaces the form fields.
         const subscription: Subscription = initialValue
             ? {...initialValue, ...fields}
-            : {...fields, id: Crypto.randomUUID(), status: 'active', startDate: dayjs().toISOString()};
+            : {...fields, id: Crypto.randomUUID()};
 
         try {
             setIsSaving(true);
@@ -93,6 +120,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                 price: fields.price,
                 frequency,
                 category,
+                status,
             });
             onClose();
         } catch {
@@ -143,7 +171,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                             </View>
 
                             <View className="auth-field">
-                                <Text className="auth-label">Price</Text>
+                                <Text className="auth-label">{isTrial ? 'Price after trial' : 'Price'}</Text>
                                 <TextInput
                                     className="auth-input"
                                     value={price}
@@ -174,6 +202,42 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                                     })}
                                 </View>
                             </View>
+
+                            <View className="auth-field">
+                                <Text className="auth-label">Status</Text>
+                                <View className="picker-row">
+                                    {STATUSES.map((option) => {
+                                        const active = status === option.value;
+                                        return (
+                                            <Pressable
+                                                key={option.value}
+                                                className={clsx('picker-option', active && 'picker-option-active')}
+                                                onPress={() => setStatus(option.value)}
+                                            >
+                                                <Text className={clsx('picker-option-text',
+                                                    active && 'picker-option-text-active')}>
+                                                    {option.label}
+                                                </Text>
+                                            </Pressable>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+
+                            <DateField
+                                label="Started on"
+                                value={startDate}
+                                onChange={setStartDate}
+                            />
+
+                            {isTrial && (
+                                <DateField
+                                    label="Trial ends on"
+                                    value={trialEndsAt}
+                                    onChange={setTrialEndsAt}
+                                    minimumDate={startDate}
+                                />
+                            )}
 
                             <View className="auth-field">
                                 <Text className="auth-label">Category</Text>

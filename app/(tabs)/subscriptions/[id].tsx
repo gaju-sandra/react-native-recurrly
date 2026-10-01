@@ -112,11 +112,13 @@ const SubscriptionDetails = () => {
                     <DetailRow first label="Status" value={formatStatusLabel(subscription.status)}/>
                     <DetailRow
                         label="Next renewal"
-                        value={isCancelled
+                        value={isCancelled || subscription.status === 'paused'
                             ? '—'
-                            : formatSubscriptionDateTime(
-                                getNextRenewalDate(subscription.startDate, subscription.frequency).toISOString())}
+                            : formatSubscriptionDateTime(getNextRenewalDate(subscription).toISOString())}
                     />
+                    {subscription.status === 'trial' && (
+                        <DetailRow label="Trial ends" value={formatSubscriptionDateTime(subscription.trialEndsAt)}/>
+                    )}
                     <DetailRow label="Started" value={formatSubscriptionDateTime(subscription.startDate)}/>
                     <DetailRow label="Category" value={subscription.category ?? '—'}/>
                     <DetailRow label="Payment" value={subscription.paymentMethod ?? 'Not provided'}/>
