@@ -26,6 +26,9 @@ const useReminderNavigation = () => {
         const open = (response: Notifications.NotificationResponse | null) => {
             const url = response?.notification.request.content.data?.url;
             if (typeof url === 'string') router.push(url as Href);
+            // Handle each tap once: this provider remounts on account switch, and would
+            // otherwise reopen the same (possibly another account's) subscription.
+            if (response) Notifications.clearLastNotificationResponse();
         };
         open(Notifications.getLastNotificationResponse());
         const listener = Notifications.addNotificationResponseReceivedListener(open);

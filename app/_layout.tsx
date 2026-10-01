@@ -1,7 +1,6 @@
 import { ClerkProvider, useAuth, useUser } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
-import { Stack, usePathname, useRouter, useSegments } from "expo-router";
-import { SplashScreen } from "expo-router";
+import { SplashScreen, Stack, usePathname, useRouter, useSegments } from "expo-router";
 import '@/global.css';
 import { useFonts } from "expo-font";
 import { useEffect, useRef } from "react";
@@ -37,7 +36,7 @@ function AuthGuard() {
     } else if (isSignedIn && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [isSignedIn, isLoaded, segments]);
+  }, [isSignedIn, isLoaded, segments, router]);
 
   useEffect(() => {
     if (!isLoaded || !isUserLoaded) return;

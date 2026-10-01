@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import dayjs from "dayjs";
 import { formatCurrency } from "@/lib/utils";
-import { getRenewalDatesBetween } from "@/lib/subscriptions";
+import { getRenewalDatesBetween, isCharged, isTrialEnding } from "@/lib/subscriptions";
 
 const CHANNEL_ID = "renewals";
 const REMINDER_HOUR = 9; // Reminders fire at 9:00 local time.
@@ -61,7 +61,7 @@ export const syncRenewalReminders = async (
 
   const now = dayjs();
   const reminders = subscriptions
-    .filter((subscription) => subscription.status === "active")
+    .filter(isCharged)
     .flatMap((subscription) =>
       getRenewalDatesBetween(subscription, now, now.add(LOOKAHEAD_DAYS, "day")).map((renewal) => ({
         subscription,
@@ -76,7 +76,13 @@ export const syncRenewalReminders = async (
   await Promise.all(
     reminders.map(({ subscription, renewal, fireAt }) =>
       Notifications.scheduleNotificationAsync({
-        content: {
+        // The first charge of a trial is the moment it stops being free: say so, since
+        // that's the reminder that saves people money.
+        content: isTrialEnding(subscription, renewal) ? {
+          title: `Your ${subscription.name} free trial ends ${whenLabel(daysBefore)}`,
+          body: `Cancel before ${renewal.format("MMM D")} to avoid a ${formatCurrency(subscription.price, subscription.currency)} charge.`,
+          data: { url: `/subscriptions/${subscription.id}` },
+        } : {
           title: `${subscription.name} renews ${whenLabel(daysBefore)}`,
           body: `${formatCurrency(subscription.price, subscription.currency)} will be charged on ${renewal.format("MMM D")}.`,
           // Read by useReminderNavigation to open the subscription when tapped.
