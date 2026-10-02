@@ -16,6 +16,7 @@ import * as Crypto from "expo-crypto";
 import {colors} from "@/constants/theme";
 import {posthog} from "@/lib/posthog";
 import DateField from "@/components/DateField";
+import {CATEGORIES, findService, type SubscriptionCategory} from "@/lib/catalog";
 
 const FREQUENCIES: SubscriptionFrequency[] = ['Weekly', 'Monthly', 'Quarterly', 'Yearly'];
 
@@ -25,19 +26,6 @@ const STATUSES: {value: SubscriptionStatus; label: string}[] = [
     {value: 'trial', label: 'Free trial'},
     {value: 'paused', label: 'Paused'},
 ];
-
-const CATEGORIES = [
-    'Entertainment',
-    'AI Tools',
-    'Developer Tools',
-    'Design',
-    'Productivity',
-    'Cloud',
-    'Music',
-    'Other',
-] as const;
-
-type SubscriptionCategory = typeof CATEGORIES[number];
 
 const CATEGORY_COLORS: Record<SubscriptionCategory, string> = {
     'Entertainment': '#f8c8c8',
@@ -85,6 +73,13 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                 : dayjs().add(7, 'day').toDate());
         }
     }
+
+    // Typing a service we know ("Spotify") picks its category, which the user can still change.
+    const onNameChange = (value: string) => {
+        setName(value);
+        const service = findService(value);
+        if (service) setCategory(service.category);
+    };
 
     const isTrial = status === 'trial';
     const parsedPrice = parsePrice(price);
@@ -163,7 +158,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                                 <TextInput
                                     className="auth-input"
                                     value={name}
-                                    onChangeText={setName}
+                                    onChangeText={onNameChange}
                                     placeholder="e.g. Netflix"
                                     placeholderTextColor={colors.mutedForeground}
                                     returnKeyType="next"

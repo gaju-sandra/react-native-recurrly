@@ -4,7 +4,7 @@ import {FlatList, Image, Pressable, Text, View} from "react-native";
 import { router } from "expo-router";
 import {SafeAreaView as RNSafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import { styled } from "nativewind";
-import images from '@/constants/image';
+import UserAvatar from "@/components/UserAvatar";
 import {useSubscriptions} from "@/context/SubscriptionsContext";
 import {icons} from "@/constants/icons";
 import {components, spacing} from "@/constants/theme";
@@ -47,9 +47,7 @@ export default function App() {
         <>
             <View className="home-header">
                 <View className="home-user">
-                    <Image source={user?.imageUrl ? {uri: user.imageUrl} : images.avatar}
-                           className="home-avatar"
-                    />
+                    <UserAvatar className="home-avatar"/>
                     <Text className="home-user-name">Hi, {displayName} 👋</Text>
                 </View>
                 <Pressable onPress={() => setIsCreateModalVisible(true)} hitSlop={8}

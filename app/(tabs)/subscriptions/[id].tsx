@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {Alert, Image, Pressable, ScrollView, Text, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Alert, AppState, Image, Linking, Pressable, ScrollView, Text, View, type NativeEventSubscription} from 'react-native';
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaView as RNSafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import { styled } from "nativewind";
@@ -10,6 +10,7 @@ import {useSubscriptions} from "@/context/SubscriptionsContext";
 import {formatCurrency, formatStatusLabel, formatSubscriptionDateTime} from "@/lib/utils";
 import {FREQUENCY_LABEL, getNextRenewalDate} from "@/lib/subscriptions";
 import {posthog} from "@/lib/posthog";
+import {findService, getCancelLink, STORE_SUBSCRIPTIONS} from "@/lib/catalog";
 import SubscriptionIcon from "@/components/SubscriptionIcon";
 import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 
@@ -27,6 +28,10 @@ const SubscriptionDetails = () => {
     const insets = useSafeAreaInsets();
     const {subscriptions, updateSubscription, removeSubscription} = useSubscriptions();
     const [isEditing, setIsEditing] = useState(false);
+    // Waits for the user to come back from the provider's cancel page.
+    const returnListener = useRef<NativeEventSubscription | null>(null);
+
+    useEffect(() => () => returnListener.current?.remove(), []);
 
     // Read from the context, not the database, so edits show up immediately.
     const subscription = subscriptions.find((item) => item.id === id);
@@ -49,17 +54,42 @@ const SubscriptionDetails = () => {
 
     const isCancelled = subscription.status === 'cancelled';
 
+    const serviceName = findService(subscription.name)?.name ?? subscription.name;
+    const cancelLink = getCancelLink(subscription.name);
+
     // Cancelling keeps the record (for history and "money saved"); deleting removes it.
-    const toggleCancelled = async () => {
-        const status: SubscriptionStatus = isCancelled ? 'active' : 'cancelled';
+    const setCancelled = async (cancelled: boolean) => {
         try {
-            await updateSubscription({...subscription, status});
-            posthog?.capture(isCancelled ? 'subscription_reactivated' : 'subscription_cancelled', {
+            await updateSubscription({...subscription, status: cancelled ? 'cancelled' : 'active'});
+            posthog?.capture(cancelled ? 'subscription_cancelled' : 'subscription_reactivated', {
                 subscription_name: subscription.name,
             });
         } catch {
             Alert.alert('Could not update', 'Please try again.');
         }
+    };
+
+    // Recurly can't cancel for the user (that needs their login with the provider), so it
+    // opens the provider's page and, once they're back, asks whether to mark it cancelled.
+    const openCancelPage = async (url: string) => {
+        try {
+            await Linking.openURL(url);
+        } catch {
+            Alert.alert('Could not open the page', url);
+            return;
+        }
+        posthog?.capture('cancel_page_opened', {subscription_name: subscription.name, known: cancelLink.known});
+
+        returnListener.current?.remove();
+        returnListener.current = AppState.addEventListener('change', (state) => {
+            if (state !== 'active') return;
+            returnListener.current?.remove();
+            returnListener.current = null;
+            Alert.alert(`Did you cancel ${serviceName}?`, 'We\'ll mark it as cancelled and stop reminding you.', [
+                {text: 'Not yet', style: 'cancel'},
+                {text: 'Yes, cancelled', onPress: () => setCancelled(true)},
+            ]);
+        });
     };
 
     const confirmDelete = () => {
@@ -128,7 +158,20 @@ const SubscriptionDetails = () => {
                     <Pressable className="auth-button" onPress={() => setIsEditing(true)}>
                         <Text className="auth-button-text">Edit</Text>
                     </Pressable>
-                    <Pressable className="auth-secondary-button" onPress={toggleCancelled}>
+                    {!isCancelled && (
+                        <View className="gap-2">
+                            <Pressable className="auth-secondary-button" onPress={() => openCancelPage(cancelLink.url)}>
+                                <Text className="auth-secondary-button-text">
+                                    {cancelLink.known ? `Cancel on ${serviceName}` : `How to cancel ${serviceName}`}
+                                </Text>
+                            </Pressable>
+                            <Pressable onPress={() => openCancelPage(STORE_SUBSCRIPTIONS.url)} hitSlop={8}
+                                       className="items-center">
+                                <Text className="auth-link">Paid through {STORE_SUBSCRIPTIONS.label}? Cancel there</Text>
+                            </Pressable>
+                        </View>
+                    )}
+                    <Pressable className="auth-secondary-button" onPress={() => setCancelled(!isCancelled)}>
                         <Text className="auth-secondary-button-text">
                             {isCancelled ? 'Mark as active' : 'Mark as cancelled'}
                         </Text>

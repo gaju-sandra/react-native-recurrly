@@ -63,7 +63,7 @@ const toSvg = (icon: SimpleIcon) =>
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#${readableHex(icon.hex)}" d="${icon.path}"/></svg>`;
 
 // "GitHub Pro Plan" -> ["githubproplan", "githubpro", "github"]; "iCloud+" -> ["icloudplus", "icloud"]
-const nameCandidates = (name: string) => {
+export const nameCandidates = (name: string) => {
     const words = name.trim().split(/\s+/);
     const candidates: string[] = [];
     for (let length = words.length; length > 0; length--) {

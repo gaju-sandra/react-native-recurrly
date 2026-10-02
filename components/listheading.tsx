@@ -6,9 +6,11 @@ const Listheading = ({title, onViewAll}:ListHeadingProps) => {
   return (
     <View className="list-head">
       <Text className="list-title" style={{color: colors.primary}}>{title}</Text>
-        <TouchableOpacity className="list-action" onPress={onViewAll} disabled={!onViewAll}>
-            <Text className="list-action-text">View all</Text>
-        </TouchableOpacity>
+        {onViewAll && (
+            <TouchableOpacity className="list-action" onPress={onViewAll}>
+                <Text className="list-action-text">View all</Text>
+            </TouchableOpacity>
+        )}
     </View>
   );
 };

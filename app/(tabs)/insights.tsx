@@ -12,6 +12,10 @@ import {getMonthOverMonthChange, getSpendBetween, getWeeklySpending} from "@/lib
 import Listheading from "@/components/listheading";
 import WeeklySpendingChart from "@/components/WeeklySpendingChart";
 import InsightHistoryCard from "@/components/InsightHistoryCard";
+import RecommendationCard from "@/components/RecommendationCard";
+import {getRecommendations} from "@/lib/recommendations";
+import CategoryChart from "@/components/CategoryChart";
+import {getSubscriptionsByCategory} from "@/lib/categories";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -26,6 +30,8 @@ const Insights = () => {
     const monthSpend = getSpendBetween(subscriptions, dayjs().startOf('month'), dayjs().endOf('month'));
     const monthChange = getMonthOverMonthChange(subscriptions);
     const weeklySpending = useMemo(() => getWeeklySpending(subscriptions), [subscriptions]);
+    const recommendations = useMemo(() => getRecommendations(subscriptions), [subscriptions]);
+    const categoryCounts = useMemo(() => getSubscriptionsByCategory(subscriptions), [subscriptions]);
 
     // Most recently added first.
     const history = useMemo(
@@ -67,7 +73,25 @@ const Insights = () => {
                 </View>
             </View>
 
-            <Listheading title="History" onViewAll={() => router.navigate('/subscriptions')}/>
+            {categoryCounts.length > 0 && (
+                <>
+                    <Listheading title="By category"/>
+                    <CategoryChart data={categoryCounts}/>
+                </>
+            )}
+
+            {recommendations.length > 0 && (
+                <View className="mb-5">
+                    <Listheading title="For you"/>
+                    <View className="gap-4">
+                        {recommendations.map((recommendation) => (
+                            <RecommendationCard key={recommendation.id} recommendation={recommendation}/>
+                        ))}
+                    </View>
+                </View>
+            )}
+
+            <Listheading title="History"onViewAll={() => router.navigate('/subscriptions')}/>
         </>
     );
 
