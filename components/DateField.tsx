@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Platform, Pressable, Text, View} from 'react-native';
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import dayjs from "dayjs";
+import clsx from "clsx";
 import {colors} from "@/constants/theme";
 
 interface DateFieldProps {
@@ -10,10 +11,12 @@ interface DateFieldProps {
     onChange: (date: Date) => void;
     minimumDate?: Date;
     maximumDate?: Date;
+    // One-tap shortcuts shown under the picker, e.g. "1 month ago".
+    presets?: {label: string; date: Date}[];
 }
 
 // iOS renders a compact inline picker; Android shows a field that opens a dialog.
-const DateField = ({label, value, onChange, minimumDate, maximumDate}: DateFieldProps) => {
+const DateField = ({label, value, onChange, minimumDate, maximumDate, presets}: DateFieldProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -53,6 +56,22 @@ const DateField = ({label, value, onChange, minimumDate, maximumDate}: DateField
                         />
                     )}
                 </>
+            )}
+            {presets && presets.length > 0 && (
+                <View className="picker-row mt-2">
+                    {presets.map((preset) => {
+                        const active = dayjs(preset.date).isSame(value, 'day');
+                        return (
+                            <Pressable key={preset.label} onPress={() => onChange(preset.date)}
+                                       className={clsx('picker-option py-2', active && 'picker-option-active')}
+                                       accessibilityRole="button" accessibilityState={{selected: active}}>
+                                <Text className={clsx('picker-option-text', active && 'picker-option-text-active')}>
+                                    {preset.label}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
             )}
         </View>
     );

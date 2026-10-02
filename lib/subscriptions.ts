@@ -31,40 +31,58 @@ const chargeDate = (start: Dayjs, frequency: SubscriptionFrequency, n: number): 
   return start.add(n * amount, unit);
 };
 
-// Index of the first charge on or after `from` (0 = the start date itself).
-const firstChargeIndex = (start: Dayjs, frequency: SubscriptionFrequency, from: Dayjs): number => {
-  let n = 0;
+// Index of the first charge on or after `from`, but never below `min`
+// (0 = the billing anchor itself).
+const firstChargeIndex = (start: Dayjs, frequency: SubscriptionFrequency, from: Dayjs, min = 0): number => {
+  let n = min;
   while (chargeDate(start, frequency, n).isBefore(from, "day")) n += 1;
   return n;
 };
 
 type BillingInfo = Pick<Subscription, "startDate" | "frequency" | "status" | "trialEndsAt">;
 
+const isTrialBilling = (subscription: BillingInfo) => subscription.status === "trial" && !!subscription.trialEndsAt;
+
 // The date billing counts from. A free trial is first charged when it ends,
 // then every period after that; everything else counts from the start date.
 const billingAnchor = (subscription: BillingInfo): Dayjs =>
-  dayjs(subscription.status === "trial" && subscription.trialEndsAt ? subscription.trialEndsAt : subscription.startDate);
+  dayjs(isTrialBilling(subscription) ? subscription.trialEndsAt : subscription.startDate);
+
+// The start date is the first payment, made when subscribing, so the first *renewal* is
+// one period later (added Oct 2 -> renews Nov 2). A trial's first charge is its end date.
+const firstRenewalIndex = (subscription: BillingInfo): number => (isTrialBilling(subscription) ? 0 : 1);
 
 export const isTrialEnding = (subscription: BillingInfo, date: Dayjs): boolean =>
-  subscription.status === "trial" && !!subscription.trialEndsAt && date.isSame(subscription.trialEndsAt, "day");
+  isTrialBilling(subscription) && date.isSame(subscription.trialEndsAt, "day");
 
-// First charge date on or after `from`. A renewal today counts as upcoming.
+// Next renewal on or after `from`. A renewal today counts as upcoming.
 export const getNextRenewalDate = (subscription: BillingInfo, from: Dayjs = dayjs()): Dayjs => {
   const start = billingAnchor(subscription);
-  return chargeDate(start, subscription.frequency, firstChargeIndex(start, subscription.frequency, from));
+  const n = firstChargeIndex(start, subscription.frequency, from, firstRenewalIndex(subscription));
+  return chargeDate(start, subscription.frequency, n);
 };
 
-// Every charge date of one subscription between `from` and `to` (both inclusive, by day).
-// Powers the weekly chart, the month-over-month change and the calendar view.
-export const getRenewalDatesBetween = (subscription: BillingInfo, from: Dayjs, to: Dayjs): Dayjs[] => {
+// Charge dates of one subscription between `from` and `to` (both inclusive, by day),
+// starting at charge index `min`.
+const chargeDatesBetween = (subscription: BillingInfo, from: Dayjs, to: Dayjs, min: number): Dayjs[] => {
   const start = billingAnchor(subscription);
   const dates: Dayjs[] = [];
-  for (let n = firstChargeIndex(start, subscription.frequency, from); ; n += 1) {
+  for (let n = firstChargeIndex(start, subscription.frequency, from, min); ; n += 1) {
     const date = chargeDate(start, subscription.frequency, n);
     if (date.isAfter(to, "day")) return dates;
     dates.push(date);
   }
 };
+
+// Renewal dates between `from` and `to`, not counting the payment made on the start date.
+// Powers the calendar view and reminders.
+export const getRenewalDatesBetween = (subscription: BillingInfo, from: Dayjs, to: Dayjs): Dayjs[] =>
+  chargeDatesBetween(subscription, from, to, firstRenewalIndex(subscription));
+
+// Every payment between `from` and `to`, including the first one on the start date.
+// Powers the weekly chart and the month-over-month change.
+const getChargeDatesBetween = (subscription: BillingInfo, from: Dayjs, to: Dayjs): Dayjs[] =>
+  chargeDatesBetween(subscription, from, to, 0);
 
 // Active subscriptions are charged, and trials will be once they end
 // (billingAnchor keeps trial charges from appearing before the trial end date).
@@ -87,7 +105,7 @@ export const getSpendBetween = (subscriptions: Subscription[], from: Dayjs, to: 
     .filter(isCharged)
     .reduce(
       (total, subscription) =>
-        total + getRenewalDatesBetween(subscription, from, to).length * subscription.price,
+        total + getChargeDatesBetween(subscription, from, to).length * subscription.price,
       0,
     );
 

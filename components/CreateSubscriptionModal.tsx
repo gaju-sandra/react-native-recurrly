@@ -27,6 +27,9 @@ const STATUSES: {value: SubscriptionStatus; label: string}[] = [
     {value: 'paused', label: 'Paused'},
 ];
 
+// Free trials always last this long, counted from the start date.
+const TRIAL_DAYS = 3;
+
 const CATEGORY_COLORS: Record<SubscriptionCategory, string> = {
     'Entertainment': '#f8c8c8',
     'AI Tools': '#b8d4e3',
@@ -52,7 +55,6 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
     const [category, setCategory] = useState<SubscriptionCategory>('Entertainment');
     const [status, setStatus] = useState<SubscriptionStatus>('active');
     const [startDate, setStartDate] = useState(new Date());
-    const [trialEndsAt, setTrialEndsAt] = useState(new Date());
     const [isSaving, setIsSaving] = useState(false);
     const [wasVisible, setWasVisible] = useState(false);
 
@@ -67,10 +69,6 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
             setCategory(initialValue ? toCategory(initialValue.category) : 'Entertainment');
             setStatus(initialValue?.status ?? 'active');
             setStartDate(initialValue ? dayjs(initialValue.startDate).toDate() : new Date());
-            // Most free trials last a week, so that's the default.
-            setTrialEndsAt(initialValue?.trialEndsAt
-                ? dayjs(initialValue.trialEndsAt).toDate()
-                : dayjs().add(7, 'day').toDate());
         }
     }
 
@@ -81,11 +79,17 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
         if (service) setCategory(service.category);
     };
 
+    const startDatePresets = [
+        {label: 'Today', date: dayjs().toDate()},
+        {label: '1 week ago', date: dayjs().subtract(1, 'week').toDate()},
+        {label: '1 month ago', date: dayjs().subtract(1, 'month').toDate()},
+    ];
+
     const isTrial = status === 'trial';
+    const trialEndsAt = dayjs(startDate).startOf('day').add(TRIAL_DAYS, 'day');
     const parsedPrice = parsePrice(price);
     const isValid = name.trim().length > 0 && price.trim().length > 0
-        && Number.isFinite(parsedPrice) && parsedPrice > 0
-        && (!isTrial || !dayjs(trialEndsAt).isBefore(startDate, 'day'));
+        && Number.isFinite(parsedPrice) && parsedPrice > 0;
 
     const handleSubmit = async () => {
         if (!isValid || isSaving) return;
@@ -98,7 +102,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
             status,
             startDate: dayjs(startDate).startOf('day').toISOString(),
             // Only trials have an end date; clear it if the status changed.
-            trialEndsAt: isTrial ? dayjs(trialEndsAt).startOf('day').toISOString() : undefined,
+            trialEndsAt: isTrial ? trialEndsAt.toISOString() : undefined,
             color: CATEGORY_COLORS[category],
         };
 
@@ -223,15 +227,16 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                                 label="Started on"
                                 value={startDate}
                                 onChange={setStartDate}
+                                presets={startDatePresets}
                             />
 
                             {isTrial && (
-                                <DateField
-                                    label="Trial ends on"
-                                    value={trialEndsAt}
-                                    onChange={setTrialEndsAt}
-                                    minimumDate={startDate}
-                                />
+                                <View className="auth-field">
+                                    <Text className="auth-label">Trial ends on</Text>
+                                    <Text className="auth-helper">
+                                        {trialEndsAt.format('MMM D, YYYY')} ({TRIAL_DAYS}-day free trial)
+                                    </Text>
+                                </View>
                             )}
 
                             <View className="auth-field">

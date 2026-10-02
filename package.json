@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@clerk/backend": "^3.22.0",
     "@clerk/expo": "^4.7.1",
     "@dicebear/adventurer": "^9",
     "@dicebear/core": "^9",

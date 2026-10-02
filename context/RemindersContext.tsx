@@ -5,6 +5,8 @@ import {router, type Href} from "expo-router";
 import {getSetting, setSetting} from "@/lib/db";
 import {requestReminderPermission, syncRenewalReminders} from "@/lib/notifications";
 import {useSubscriptions} from "@/context/SubscriptionsContext";
+import {useAuth} from "@clerk/expo";
+import {sendTestEmail as sendTestEmailRequest, syncEmailReminders} from "@/lib/emailReminders";
 
 export const REMINDER_DAY_OPTIONS = [1, 3, 7] as const;
 const DEFAULT_DAYS_BEFORE = 1;
@@ -15,6 +17,11 @@ interface RemindersContextValue {
     // Resolves false when the user refused notification permission.
     setEnabled: (enabled: boolean) => Promise<boolean>;
     setDaysBefore: (days: number) => Promise<void>;
+    // An email to the login address on each due date (sent by the server, app open or not).
+    emailEnabled: boolean;
+    setEmailEnabled: (enabled: boolean) => Promise<void>;
+    // Resolves to the address the test email went to.
+    sendTestEmail: () => Promise<string>;
 }
 
 const RemindersContext = createContext<RemindersContextValue | null>(null);
@@ -41,16 +48,30 @@ export const RemindersProvider = ({children}: {children: React.ReactNode}) => {
     const {subscriptions, isLoading} = useSubscriptions();
     const [enabled, setEnabledState] = useState(false);
     const [daysBefore, setDaysBeforeState] = useState(DEFAULT_DAYS_BEFORE);
+    const [emailEnabled, setEmailEnabledState] = useState(false);
     const [settingsLoaded, setSettingsLoaded] = useState(false);
+    const {getToken} = useAuth();
+    // Through a ref so a new getToken identity doesn't re-trigger the email sync.
+    const getTokenRef = useRef(getToken);
+    useEffect(() => {
+        getTokenRef.current = getToken;
+    }, [getToken]);
+    const getFreshToken = useCallback(() => getTokenRef.current(), []);
     // Syncs run one after another so a slow one can't cancel a newer schedule.
     const syncQueue = useRef<Promise<void>>(Promise.resolve());
+    const emailQueue = useRef<Promise<void>>(Promise.resolve());
 
     useReminderNavigation();
 
     useEffect(() => {
-        Promise.all([getSetting(db, 'reminders_enabled'), getSetting(db, 'reminder_days_before')])
-            .then(([storedEnabled, storedDays]) => {
+        Promise.all([
+            getSetting(db, 'reminders_enabled'),
+            getSetting(db, 'reminder_days_before'),
+            getSetting(db, 'email_reminders_enabled'),
+        ])
+            .then(([storedEnabled, storedDays, storedEmail]) => {
                 setEnabledState(storedEnabled === 'true');
+                setEmailEnabledState(storedEmail === 'true');
                 if (storedDays) setDaysBeforeState(Number(storedDays));
             })
             .finally(() => setSettingsLoaded(true));
@@ -64,6 +85,14 @@ export const RemindersProvider = ({children}: {children: React.ReactNode}) => {
             .catch((error) => console.warn('Could not schedule reminders', error));
     }, [subscriptions, enabled, daysBefore, isLoading, settingsLoaded]);
 
+    // Same for emails; only the differences reach the server, so this is cheap when nothing changed.
+    useEffect(() => {
+        if (isLoading || !settingsLoaded) return;
+        emailQueue.current = emailQueue.current
+            .then(() => syncEmailReminders(db, subscriptions, {enabled: emailEnabled, getToken: getFreshToken}))
+            .catch((error) => console.warn('Could not schedule email reminders', error));
+    }, [db, subscriptions, emailEnabled, getFreshToken, isLoading, settingsLoaded]);
+
     const setEnabled = useCallback(async (next: boolean) => {
         if (next && !(await requestReminderPermission())) return false;
         await setSetting(db, 'reminders_enabled', String(next));
@@ -76,9 +105,16 @@ export const RemindersProvider = ({children}: {children: React.ReactNode}) => {
         setDaysBeforeState(days);
     }, [db]);
 
+    const setEmailEnabled = useCallback(async (next: boolean) => {
+        await setSetting(db, 'email_reminders_enabled', String(next));
+        setEmailEnabledState(next);
+    }, [db]);
+
+    const sendTestEmail = useCallback(() => sendTestEmailRequest(getFreshToken), [getFreshToken]);
+
     const value = useMemo(
-        () => ({enabled, daysBefore, setEnabled, setDaysBefore}),
-        [enabled, daysBefore, setEnabled, setDaysBefore],
+        () => ({enabled, daysBefore, setEnabled, setDaysBefore, emailEnabled, setEmailEnabled, sendTestEmail}),
+        [enabled, daysBefore, setEnabled, setDaysBefore, emailEnabled, setEmailEnabled, sendTestEmail],
     );
 
     return (

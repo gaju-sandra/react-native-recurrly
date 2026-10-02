@@ -39,7 +39,28 @@ export default function Settings() {
   const activeCount = subscriptions.filter((subscription) => subscription.status === 'active').length;
   const monthlySpend = getMonthlySpend(subscriptions);
   const appVersion = Constants.expoConfig?.version ?? '—';
-  const { enabled: remindersEnabled, daysBefore, setEnabled: setRemindersEnabled, setDaysBefore } = useReminders();
+  const {
+    enabled: remindersEnabled, daysBefore, setEnabled: setRemindersEnabled, setDaysBefore,
+    emailEnabled, setEmailEnabled, sendTestEmail,
+  } = useReminders();
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const toggleEmail = async (next: boolean) => {
+    await setEmailEnabled(next);
+    posthog?.capture(next ? 'email_reminders_enabled' : 'email_reminders_disabled');
+  };
+
+  const onSendTestEmail = async () => {
+    try {
+      setSendingTest(true);
+      const sentTo = await sendTestEmail();
+      Alert.alert('Test email sent', `Check the inbox of ${sentTo}.`);
+    } catch (error) {
+      Alert.alert('Could not send the email', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   const toggleReminders = async (next: boolean) => {
     const allowed = await setRemindersEnabled(next);
@@ -155,6 +176,27 @@ export default function Settings() {
               </View>
             </View>
           )}
+          <View className="settings-row settings-row-divider">
+            <View className="min-w-0 flex-1 pr-3">
+              <Text className="settings-row-label">Email reminders</Text>
+              <Text className="settings-row-value" numberOfLines={1}>On the due date, to {email || 'your email'}</Text>
+            </View>
+            <Switch
+              value={emailEnabled}
+              onValueChange={toggleEmail}
+              trackColor={{ true: colors.accent }}
+              accessibilityLabel="Email reminders"
+            />
+          </View>
+          <Pressable
+            className="settings-row settings-row-divider"
+            onPress={onSendTestEmail}
+            disabled={sendingTest}
+            accessibilityRole="button"
+          >
+            <Text className="settings-row-label">Send test email</Text>
+            {sendingTest ? <ActivityIndicator color={colors.accent} /> : <Text className="settings-row-value">Send</Text>}
+          </Pressable>
         </View>
 
         <Text className="settings-section-title">About</Text>
