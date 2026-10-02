@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "dependencies": {
     "@clerk/expo": "^4.7.1",
+    "@dicebear/adventurer": "^9",
+    "@dicebear/core": "^9",
     "@expo/ui": "~57.0.19",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.23",

@@ -1,13 +1,13 @@
 import { useAuth, useUser } from '@clerk/expo';
 import { useRouter } from 'expo-router';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView, Switch, Pressable, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Switch, Pressable, Linking } from 'react-native';
 import { SafeAreaView as RNSafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styled } from 'nativewind';
 import { useState } from 'react';
 import Constants from 'expo-constants';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
-import images from '@/constants/image';
+import UserAvatar from '@/components/UserAvatar';
 import { colors, components, spacing } from '@/constants/theme';
 import { useSubscriptions } from '@/context/SubscriptionsContext';
 import { REMINDER_DAY_OPTIONS, useReminders } from '@/context/RemindersContext';
@@ -91,10 +91,7 @@ export default function Settings() {
         <Text className="list-title mb-5">Settings</Text>
 
         <View className="settings-profile-card">
-          <Image
-            source={user?.imageUrl ? { uri: user.imageUrl } : images.avatar}
-            className="settings-avatar"
-          />
+          <UserAvatar className="settings-avatar" />
           <View className="min-w-0 flex-1">
             <Text className="settings-profile-name" numberOfLines={1}>{displayName}</Text>
             <Text className="settings-profile-email" numberOfLines={1}>{email}</Text>
