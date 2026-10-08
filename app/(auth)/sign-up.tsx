@@ -1,6 +1,7 @@
 import { useSignUp } from '@clerk/expo/legacy';
 import { Link, useRouter } from 'expo-router';
 import { useState, useRef } from 'react';
+import {PROVINCES, DISTRICTS}  from "@/constants/rwanda";
 import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, ScrollView, Platform,
@@ -29,6 +30,10 @@ const s = StyleSheet.create({
   label:       { fontSize: 13, fontFamily: 'sans-semibold', color: colors.primary },
   input:       { borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'sans-medium', color: colors.primary, backgroundColor: colors.background },
   codeInput:   { textAlign: 'center', letterSpacing: 8, fontSize: 20 },
+  pickerText:        { fontSize: 15, fontFamily: 'sans-medium', color: colors.primary },
+  pickerPlaceholder: { color: colors.mutedForeground },
+  menu:        { borderWidth: 1, borderColor: colors.border, borderRadius: 14, backgroundColor: colors.background, overflow: 'hidden' },
+  menuItem:    { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   strengthRow: { flexDirection: 'row', gap: 4, marginTop: 6 },
   strengthBar:  { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.border },
   strengthHint: { fontSize: 11, fontFamily: 'sans-medium', marginTop: 4 },
@@ -67,7 +72,12 @@ export default function SignUp() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const [provinceId, setProvinceId] = useState<number | null>(null);
+  const [districtId, setDistrictId] = useState<number | null>(null);
+  const [openMenu,setOpenMenu]= useState <'province' | 'district' | null>(null);
+  const availableDistricts = DISTRICTS.filter((district) => district.province_id === provinceId);
+  const selectedProvince = PROVINCES.find((province) => province.id === provinceId);
+  const selectedDistrict = DISTRICTS.find((district) => district.id === districtId);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
@@ -90,6 +100,8 @@ export default function SignUp() {
     if (!name.trim()) { setError('Full name is required.'); return; }
     if (!email.trim()) { setError('Email is required.'); return; }
     if (!password || password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!selectedProvince) { setError('Please choose your province.'); return; }
+    if (!selectedDistrict) { setError('Please choose your district.'); return; }
     setLoading(true);
     try {
       const nameParts = name.trim().split(' ');
@@ -98,6 +110,7 @@ export default function SignUp() {
         password,
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' ') || undefined,
+        unsafeMetadata: { province: selectedProvince.name, district: selectedDistrict.name },
       });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
@@ -236,6 +249,61 @@ export default function SignUp() {
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
+            </View>
+            <View style={s.field}>
+              <Text style={s.label}>Province</Text>
+              <TouchableOpacity
+                style={s.input}
+                onPress={() => setOpenMenu(openMenu === 'province' ? null : 'province')}>
+                <Text style={[s.pickerText, !selectedProvince && s.pickerPlaceholder]}>
+                  {selectedProvince ? selectedProvince.name : 'Select Province'}
+                </Text>
+              </TouchableOpacity>
+              {openMenu === 'province' && (
+                <View style={s.menu}>
+                  {PROVINCES.map((province) => (
+                    <TouchableOpacity
+                      key={province.id}
+                      style={s.menuItem}
+                      onPress={() => {
+                        setProvinceId(province.id);
+                        setDistrictId(null);
+                        setOpenMenu(null);
+                      }}
+                    >
+                      <Text style={s.pickerText}>{province.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={s.field}>
+              <Text style={s.label}>District</Text>
+              <TouchableOpacity
+                style={[s.input, !selectedProvince && s.btnOff]}
+                disabled={!selectedProvince}
+                onPress={() => setOpenMenu(openMenu === 'district' ? null : 'district')}>
+                <Text style={[s.pickerText, !selectedDistrict && s.pickerPlaceholder]}>
+                  {selectedDistrict ? selectedDistrict.name : selectedProvince ? 'Select District' : 'Choose a province first'}
+                </Text>
+              </TouchableOpacity>
+              {openMenu === 'district' && (
+                <View style={s.menu}>
+                  {availableDistricts.map((district) => (
+                    <TouchableOpacity
+                      key={district.id}
+                      style={s.menuItem}
+                      onPress={() => {
+                        setDistrictId(district.id);
+                        setOpenMenu(null);
+                      }}
+                    >
+                      <Text style={s.pickerText}>{district.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             <View style={s.field}>

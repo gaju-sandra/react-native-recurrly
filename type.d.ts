@@ -16,6 +16,16 @@ declare global {
 
     type SubscriptionStatus = "active" | "trial" | "paused" | "cancelled";
 
+    // One renewal the user confirmed they paid. dueDate is the renewal day (YYYY-MM-DD).
+    interface Payment {
+        id: string;
+        subscriptionId: string;
+        dueDate: string;
+        amount: number;
+        currency: string;
+        paidAt: string;
+    }
+
     // What is stored in the database. Renewal dates are derived from
     // startDate + frequency (see lib/subscriptions.ts), so they never go stale.
     interface Subscription {
@@ -73,6 +83,16 @@ declare global {
         value: string;
         onChangeText: (value: string) => void;
         placeholder?: string;
+    }
+    interface CancelSubscriptionModalProps {
+        visible: boolean;
+        onClose: () => void;
+        serviceName: string;
+        cancelLabel:string;
+        onOpenCancelPage: ()=> void;
+        onOpenStorePage:()=>void;
+        onMarkCancelled: ()=>void;
+
     }
 }
 

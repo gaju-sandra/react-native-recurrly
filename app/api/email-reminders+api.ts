@@ -11,11 +11,10 @@ interface ReminderInput {
     amount: string;
     date: string;
     sendAt: string | null;
-    isTrialEnd: boolean;
+    kind: 'due' | 'trial' | 'overdue';
 }
 
 type Body =
-    | {action: 'test'}
     | {action: 'schedule'; reminders: ReminderInput[]}
     | {action: 'cancel'; ids: string[]};
 
@@ -44,19 +43,30 @@ const isString = (value: unknown, max = 200): value is string => typeof value ==
 const isReminder = (value: unknown): value is ReminderInput => {
     const item = value as ReminderInput;
     return !!item && isString(item.name, 100) && isString(item.amount, 40) && isString(item.date, 40)
-        && (item.sendAt === null || isString(item.sendAt, 40)) && typeof item.isTrialEnd === 'boolean';
+        && (item.sendAt === null || isString(item.sendAt, 40)) && ['due', 'trial', 'overdue'].includes(item.kind);
 };
 
 const reminderEmail = (reminder: ReminderInput, firstName: string | null): EmailContent => {
     const greeting = `Hi ${firstName ?? 'there'},`;
-    return reminder.isTrialEnd ? {
-        subject: `Your ${reminder.name} free trial ends today`,
-        text: `${greeting}\nYour ${reminder.name} free trial ends today, ${reminder.date}. `
-            + `You'll be charged ${reminder.amount} unless you cancel.\n— Recurly`,
-    } : {
-        subject: `${reminder.name} is due today`,
-        text: `${greeting}\nYour ${reminder.name} subscription (${reminder.amount}) renews today, ${reminder.date}.\n— Recurly`,
-    };
+    switch (reminder.kind) {
+        case 'trial':
+            return {
+                subject: `Your ${reminder.name} free trial ends on ${reminder.date}`,
+                text: `${greeting}\nYour ${reminder.name} free trial ends on ${reminder.date}. `
+                    + `You'll be charged ${reminder.amount} unless you cancel.\n— Recurly`,
+            };
+        case 'overdue':
+            return {
+                subject: `${reminder.name} payment is overdue`,
+                text: `${greeting}\nYour ${reminder.name} payment of ${reminder.amount} was due on ${reminder.date} `
+                    + `and isn't marked as paid yet. Open Recurly to pay it or mark it as paid.\n— Recurly`,
+            };
+        case 'due':
+            return {
+                subject: `${reminder.name} renews on ${reminder.date}`,
+                text: `${greeting}\nYour ${reminder.name} subscription (${reminder.amount}) renews on ${reminder.date}.\n— Recurly`,
+            };
+    }
 };
 
 export async function POST(request: Request) {
@@ -72,14 +82,6 @@ export async function POST(request: Request) {
 
     try {
         switch (body.action) {
-            case 'test': {
-                await sendEmail(user.email, {
-                    subject: 'Recurly test email',
-                    text: `Hi ${user.firstName ?? 'there'},\nEmail reminders are working. `
-                        + `You'll get an email like this on the day each subscription is due.\n— Recurly`,
-                });
-                return Response.json({sentTo: user.email});
-            }
             case 'schedule': {
                 const {reminders} = body;
                 if (!Array.isArray(reminders) || reminders.length > MAX_REMINDERS || !reminders.every(isReminder)) {

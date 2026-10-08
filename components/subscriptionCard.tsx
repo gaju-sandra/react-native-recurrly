@@ -6,9 +6,12 @@ import clsx from "clsx";
 import {icons} from "@/constants/icons";
 import {getNextRenewalDate} from "@/lib/subscriptions";
 
-const SubscriptionCard = ({name, price, currency, frequency, color, category,
-                              plan, expanded, onPress, onManagePress, paymentMethod, startDate, status, trialEndsAt }: SubscriptionCardProps)=> {
-  const renewalDate = getNextRenewalDate({startDate, frequency, status, trialEndsAt}).toISOString();
+const SubscriptionCard = ({name, price, currency, frequency,
+                              color, category, plan, expanded, onPress, onManagePress,
+                              paymentMethod, startDate, status, trialEndsAt }:
+                          SubscriptionCardProps)=> {
+  const renewalDate = getNextRenewalDate({startDate, frequency,
+      status, trialEndsAt}).toISOString();
 
   return (
 
@@ -61,7 +64,8 @@ const SubscriptionCard = ({name, price, currency, frequency, color, category,
                             <View className="sub-row-copy">
                                 <Text className="sub-label">Payment:</Text>
                                 <Text className="sub-value" numberOfLines={1}
-                                      ellipsizeMode="tail">{paymentMethod?.trim() ?? 'Not provided'}</Text>
+                                      ellipsizeMode="tail">{paymentMethod?.trim() ??
+                                    'Not provided'}</Text>
                             </View>
                         </View>
                         <View className="sub-row">

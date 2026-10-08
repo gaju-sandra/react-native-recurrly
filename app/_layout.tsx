@@ -26,6 +26,7 @@ function AuthGuard() {
   // expo-router hides the NavigationContainer, so PostHog can't auto-capture screens.
   useEffect(() => {
     posthog?.screen(pathname);
+    console.log ('screen:', pathname);
   }, [pathname]);
 
   useEffect(() => {

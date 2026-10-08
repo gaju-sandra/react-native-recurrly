@@ -48,7 +48,7 @@ export default function App() {
             <View className="home-header">
                 <View className="home-user">
                     <UserAvatar className="home-avatar"/>
-                    <Text className="home-user-name">Hi, {displayName} 👋</Text>
+                    <Text className="home-user-name">Reculry</Text>
                 </View>
                 <Pressable onPress={() => setIsCreateModalVisible(true)} hitSlop={8}
                            accessibilityLabel="Add subscription">
@@ -100,7 +100,6 @@ export default function App() {
                         === item.id}
                         onPress={()=> setExpandedSubscriptionId((currentId)=>
                             (currentId === item.id ? null : item.id))}
-                        onManagePress={() => router.push(`/subscriptions/${item.id}`)}
                         />
                     )}
                     extraData={expandedSubscriptionId}

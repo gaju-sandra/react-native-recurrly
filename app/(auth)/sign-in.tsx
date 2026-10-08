@@ -1,6 +1,6 @@
 import { useSignIn } from '@clerk/expo/legacy';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, ScrollView, Platform,
@@ -67,6 +67,9 @@ export default function SignIn() {
       setLoading(false);
     }
   };
+
+
+
 
   return (
     <SafeAreaView style={s.safe}>

@@ -623,4 +623,25 @@
     .settings-signout-text {
         @apply text-base font-sans-bold text-white;
     }
+
+    /* Subscription detail actions: one height, no built-in margins, so the stack's gap sets all spacing. */
+    .detail-button {
+        @apply items-center rounded-2xl bg-accent py-4;
+    }
+
+    .detail-button-secondary {
+        @apply items-center rounded-2xl border border-accent/30 bg-accent/10 py-4;
+    }
+
+    .detail-button-secondary-text {
+        @apply text-base font-sans-semibold text-accent;
+    }
+
+    .detail-button-danger {
+        @apply items-center rounded-2xl bg-destructive py-4;
+    }
+
+    .detail-link {
+        @apply items-center py-1;
+    }
 }

@@ -272,6 +272,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                         </ScrollView>
                     </View>
                 </View>
+
             </KeyboardAvoidingView>
         </Modal>
     );

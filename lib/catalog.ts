@@ -25,6 +25,8 @@ export interface CatalogService {
     // The provider's own page for managing or cancelling the plan. Missing when there is
     // no stable public link; cancelling then falls back to a web search.
     cancelUrl?: string;
+    // Where to pay or update billing, when that isn't the same page as cancelUrl.
+    billingUrl?: string;
     // Normalized names users type for this service (see `normalize` in lib/brandIcons).
     aliases: string[];
 }
@@ -35,7 +37,8 @@ export const CATALOG: CatalogService[] = [
     // Entertainment
     {id: 'netflix', name: 'Netflix', category: 'Entertainment', fromPrice: 7.99,
         website: 'https://www.netflix.com',
-        cancelUrl: 'https://www.netflix.com/cancelplan', aliases: ['netflix']},
+        cancelUrl: 'https://www.netflix.com/cancelplan', billingUrl: 'https://www.netflix.com/account',
+        aliases: ['netflix']},
     {id: 'disneyplus', name: 'Disney+', category: 'Entertainment', fromPrice: 9.99,
         website: 'https://www.disneyplus.com',
         cancelUrl: 'https://www.disneyplus.com/account/subscription', aliases: ['disneyplus', 'disney']},
@@ -263,5 +266,14 @@ export const getCancelLink = (name: string): {url: string; known: boolean} => {
     const url = findService(name)?.cancelUrl;
     if (url) return {url, known: true};
     const query = encodeURIComponent(`how to cancel ${name} subscription`);
+    return {url: `https://www.google.com/search?q=${query}`, known: false};
+};
+
+// Where to pay a renewal: the provider's billing/account page, its homepage, or a search.
+export const getPayLink = (name: string): {url: string; known: boolean} => {
+    const service = findService(name);
+    const url = service?.billingUrl ?? service?.cancelUrl ?? service?.website;
+    if (url) return {url, known: true};
+    const query = encodeURIComponent(`pay ${name} subscription`);
     return {url: `https://www.google.com/search?q=${query}`, known: false};
 };

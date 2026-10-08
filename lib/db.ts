@@ -2,7 +2,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
 // Bump this and add a new `if (currentVersion === N)` block whenever the schema changes.
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 
 // Runs once when SQLiteProvider opens the database (passed as `onInit`).
 // PRAGMA user_version is a number SQLite stores inside the file, so we know which
@@ -45,6 +45,21 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
       );
     `);
     currentVersion = 2;
+  }
+  if (currentVersion === 2) {
+    // Renewals the user marked as paid; one row per subscription per due date.
+    await db.execAsync(`
+      CREATE TABLE payments (
+        id TEXT PRIMARY KEY NOT NULL,
+        subscription_id TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'USD',
+        paid_at TEXT NOT NULL,
+        UNIQUE (subscription_id, due_date)
+      );
+    `);
+    currentVersion = 3;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
@@ -138,7 +153,50 @@ export async function updateSubscription(db: SQLiteDatabase, subscription: Subsc
 }
 
 export async function deleteSubscription(db: SQLiteDatabase, id: string) {
-  await db.runAsync("DELETE FROM subscriptions WHERE id = ?", id);
+  await db.withTransactionAsync(async () => {
+    await db.runAsync("DELETE FROM payments WHERE subscription_id = ?", id);
+    await db.runAsync("DELETE FROM subscriptions WHERE id = ?", id);
+  });
+}
+
+type PaymentRow = {
+  id: string;
+  subscription_id: string;
+  due_date: string;
+  amount_cents: number;
+  currency: string;
+  paid_at: string;
+};
+
+export async function getAllPayments(db: SQLiteDatabase): Promise<Payment[]> {
+  const rows = await db.getAllAsync<PaymentRow>("SELECT * FROM payments ORDER BY due_date DESC");
+  return rows.map((row) => ({
+    id: row.id,
+    subscriptionId: row.subscription_id,
+    dueDate: row.due_date,
+    amount: row.amount_cents / 100,
+    currency: row.currency,
+    paidAt: row.paid_at,
+  }));
+}
+
+export async function insertPayment(db: SQLiteDatabase, payment: Payment) {
+  await db.runAsync(
+    `INSERT INTO payments (id, subscription_id, due_date, amount_cents, currency, paid_at)
+     VALUES ($id, $subscription_id, $due_date, $amount_cents, $currency, $paid_at)`,
+    {
+      $id: payment.id,
+      $subscription_id: payment.subscriptionId,
+      $due_date: payment.dueDate,
+      $amount_cents: Math.round(payment.amount * 100),
+      $currency: payment.currency,
+      $paid_at: payment.paidAt,
+    },
+  );
+}
+
+export async function deletePayment(db: SQLiteDatabase, id: string) {
+  await db.runAsync("DELETE FROM payments WHERE id = ?", id);
 }
 
 // Settings are stored as text; callers convert (e.g. JSON.parse / Number) as needed.
