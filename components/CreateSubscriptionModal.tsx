@@ -54,7 +54,8 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
     const [frequency, setFrequency] = useState<SubscriptionFrequency>('Monthly');
     const [category, setCategory] = useState<SubscriptionCategory>('Entertainment');
     const [status, setStatus] = useState<SubscriptionStatus>('active');
-    const [startDate, setStartDate] = useState(new Date());
+    // Empty until the user picks a date, so the field shows "Choose a date".
+    const [startDate, setStartDate] = useState<Date | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [wasVisible, setWasVisible] = useState(false);
 
@@ -68,7 +69,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
             setFrequency(initialValue?.frequency ?? 'Monthly');
             setCategory(initialValue ? toCategory(initialValue.category) : 'Entertainment');
             setStatus(initialValue?.status ?? 'active');
-            setStartDate(initialValue ? dayjs(initialValue.startDate).toDate() : new Date());
+            setStartDate(initialValue ? dayjs(initialValue.startDate).toDate() : null);
         }
     }
 
@@ -86,13 +87,13 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
     ];
 
     const isTrial = status === 'trial';
-    const trialEndsAt = dayjs(startDate).startOf('day').add(TRIAL_DAYS, 'day');
+    const trialEndsAt = startDate ? dayjs(startDate).startOf('day').add(TRIAL_DAYS, 'day') : null;
     const parsedPrice = parsePrice(price);
     const isValid = name.trim().length > 0 && price.trim().length > 0
-        && Number.isFinite(parsedPrice) && parsedPrice > 0;
+        && Number.isFinite(parsedPrice) && parsedPrice > 0 && startDate !== null;
 
     const handleSubmit = async () => {
-        if (!isValid || isSaving) return;
+        if (!isValid || isSaving || !startDate) return;
 
         const fields = {
             name: name.trim(),
@@ -102,7 +103,7 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
             status,
             startDate: dayjs(startDate).startOf('day').toISOString(),
             // Only trials have an end date; clear it if the status changed.
-            trialEndsAt: isTrial ? trialEndsAt.toISOString() : undefined,
+            trialEndsAt: isTrial ? trialEndsAt?.toISOString() : undefined,
             color: CATEGORY_COLORS[category],
         };
 
@@ -228,9 +229,12 @@ const CreateSubscriptionModal = ({visible, onClose, onSubmit, initialValue}: Cre
                                 value={startDate}
                                 onChange={setStartDate}
                                 presets={startDatePresets}
+                                placeholder="Choose a date"
+                                // A subscription can't have started in the future.
+                                maximumDate={new Date()}
                             />
 
-                            {isTrial && (
+                            {isTrial && trialEndsAt && (
                                 <View className="auth-field">
                                     <Text className="auth-label">Trial ends on</Text>
                                     <Text className="auth-helper">
