@@ -46,6 +46,7 @@ const DateField = ({label, value, onChange, placeholder = 'Choose a date', minim
                         mode="date"
                         display="inline"
                         accentColor={colors.accent}
+                        themeVariant="light"
                         minimumDate={minimumDate}
                         maximumDate={maximumDate}
                         onValueChange={(_, date) => pick(date)}
