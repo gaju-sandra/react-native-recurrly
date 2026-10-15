@@ -1,11 +1,19 @@
 import React from 'react';
 import {View, Text, Pressable} from 'react-native';
-import {Image} from "expo-image";
+import SubscriptionIcon from "@/components/SubscriptionIcon";
 import {formatCurrency, formatStatusLabel, formatSubscriptionDateTime} from "@/lib/utils";
 import clsx from "clsx";
+import {icons} from "@/constants/icons";
+import {colors} from "@/constants/theme";
+import {getNextRenewalDate} from "@/lib/subscriptions";
 
-const SubscriptionCard = ({name, price, currency, icon, billing, color, category,
-                              plan, renewalDate,expanded, onPress, paymentMethod, startDate, status }: SubscriptionCardProps)=> {
+const SubscriptionCard = ({name, price, currency, frequency,
+                              color, category, plan, expanded, onPress, onManagePress,
+                              paymentMethod, startDate, status, trialEndsAt }:
+                          SubscriptionCardProps)=> {
+  const renewalDate = getNextRenewalDate({startDate, frequency,
+      status, trialEndsAt}).toISOString();
+
   return (
 
     <Pressable onPress={onPress} className={clsx('sub-card',expanded ?
@@ -13,7 +21,8 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
             backgroundColor: color}: undefined}>
       <View className= "sub-head">
           <View className="sub-main">
-              <Image source={icon} className="sub-icon" />
+              <SubscriptionIcon name={name} fallback={icons.wallet} className="sub-icon"
+                                backgroundColor={expanded ? colors.subscription : color ?? colors.card} />
               <View className="sub-copy">
                   <Text numberOfLines={1}className="sub-title">
                       {name}
@@ -28,7 +37,7 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
           <View className="sub-price-box">
               <Text className="sub-price">{formatCurrency(price)}
               </Text>
-              <Text className="sub-billing">{billing}
+              <Text className="sub-billing">{frequency}
               </Text>
           </View>
       </View>
@@ -36,7 +45,7 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
 
         {expanded &&
             (
-                <View className="sub-bdy">
+                <View className="sub-body">
                     <View className="sub-details">
                         <View className="sub-row">
                         <View className="sub-row-copy">
@@ -57,7 +66,8 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
                             <View className="sub-row-copy">
                                 <Text className="sub-label">Payment:</Text>
                                 <Text className="sub-value" numberOfLines={1}
-                                      ellipsizeMode="tail">{paymentMethod?.trim() ?? 'Not provided'}</Text>
+                                      ellipsizeMode="tail">{paymentMethod?.trim() ??
+                                    'Not provided'}</Text>
                             </View>
                         </View>
                         <View className="sub-row">
@@ -71,6 +81,12 @@ const SubscriptionCard = ({name, price, currency, icon, billing, color, category
 
 
                     </View>
+                    {onManagePress && (
+                        <Pressable className="sub-cancel" onPress={onManagePress}
+                                   accessibilityLabel={`Manage ${name}`}>
+                            <Text className="sub-cancel-text">Manage</Text>
+                        </Pressable>
+                    )}
                 </View>
             )}
 
