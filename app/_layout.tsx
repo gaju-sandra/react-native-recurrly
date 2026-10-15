@@ -1,6 +1,8 @@
 import { ClerkProvider, useAuth, useUser } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
 import { SplashScreen, Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { SplashScreen } from "expo-router";
 import '@/global.css';
 import { useFonts } from "expo-font";
 import { useEffect, useRef } from "react";
@@ -29,6 +31,8 @@ function AuthGuard() {
     console.log ('screen:', pathname);
   }, [pathname]);
 
+  const identifiedUserId = useRef<string | null>(null);
+
   useEffect(() => {
     if (!isLoaded) return;
     const inAuthGroup = segments[0] === '(auth)';
@@ -38,6 +42,7 @@ function AuthGuard() {
       router.replace('/(tabs)');
     }
   }, [isSignedIn, isLoaded, segments, router]);
+  }, [isSignedIn, isLoaded, segments]);
 
   useEffect(() => {
     if (!isLoaded || !isUserLoaded) return;
@@ -94,4 +99,5 @@ export default function RootLayout() {
       {app}
     </PostHogProvider>
   ) : app;
+  return posthog ? <PostHogProvider client={posthog}>{app}</PostHogProvider> : app;
 }

@@ -78,6 +78,7 @@ export default function SignUp() {
   const availableDistricts = DISTRICTS.filter((district) => district.province_id === provinceId);
   const selectedProvince = PROVINCES.find((province) => province.id === provinceId);
   const selectedDistrict = DISTRICTS.find((district) => district.id === districtId);
+
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
@@ -113,6 +114,9 @@ export default function SignUp() {
         unsafeMetadata: { province: selectedProvince.name, district: selectedDistrict.name },
       });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      });
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      posthog?.capture('account_created');
       setPendingVerification(true);
     } catch (err: any) {
       const msg = err?.errors?.[0]?.longMessage ?? err?.errors?.[0]?.message ?? 'Sign up failed.';
@@ -135,6 +139,7 @@ export default function SignUp() {
         // Only count the account once it's verified and the session is active.
         posthog?.capture('email_verification_completed');
         posthog?.capture('account_created');
+        posthog?.capture('email_verification_completed');
         router.replace('/(tabs)');
       } else {
         setError(`Unexpected status: ${result.status}. Please try again.`);

@@ -1,6 +1,7 @@
 import { useSignIn } from '@clerk/expo/legacy';
 import { Link, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, ScrollView, Platform,
@@ -88,6 +89,23 @@ export default function SignIn() {
             <Text style={s.subtitle}>Sign in to manage your subscriptions</Text>
           </View>
 
+  return (
+    <SafeAreaView style={s.safe}>
+      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView style={s.flex} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+          <View style={s.brand}>
+            <View style={s.logoRow}>
+              <View style={s.logoBox}><Text style={s.logoLetter}>R</Text></View>
+              <View>
+                <Text style={s.wordmark}>Recurlly</Text>
+                <Text style={s.wordmarkSub}>SUBSCRIPTION TRACKER</Text>
+              </View>
+            </View>
+            <Text style={s.title}>Welcome back</Text>
+            <Text style={s.subtitle}>Sign in to manage your subscriptions</Text>
+          </View>
+
           <View style={s.card}>
             {error ? <View style={s.errorBox}><Text style={s.errorText}>{error}</Text></View> : null}
 
@@ -126,6 +144,7 @@ export default function SignIn() {
 
           <View style={s.footer}>
             <Text style={s.footerText}>Don&apos;t have an account? </Text>
+            <Text style={s.footerText}>Don't have an account? </Text>
             <Link href="/(auth)/sign-up" asChild>
               <TouchableOpacity><Text style={s.footerLink}>Sign Up</Text></TouchableOpacity>
             </Link>

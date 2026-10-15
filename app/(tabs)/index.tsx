@@ -6,6 +6,8 @@ import {SafeAreaView as RNSafeAreaView, useSafeAreaInsets} from "react-native-sa
 import { styled } from "nativewind";
 import UserAvatar from "@/components/UserAvatar";
 import {useSubscriptions} from "@/context/SubscriptionsContext";
+import images from '@/constants/image';
+import {HOME_BALANCE, HOME_SUBSCRIPTIONS, UPCOMING_SUBSCRIPTIONS} from "@/constants/data";
 import {icons} from "@/constants/icons";
 import {components, spacing} from "@/constants/theme";
 import {formatCurrency} from "@/lib/utils";
@@ -86,6 +88,8 @@ export default function App() {
         </>
     );
 
+    const { user } = useUser();
+    const displayName = user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ?? 'there';
     return (
         <SafeAreaView className="flex-1 bg-background p-5" edges={['top', 'left', 'right']}>
 
@@ -94,6 +98,45 @@ export default function App() {
                 <FlatList
                     ListHeaderComponent={listHeader}
                     data={subscriptions}
+                    ListHeaderComponent={()=>(
+                        <>
+                            <View className="home-header">
+                                <View className="home-user">
+                                    <Image source ={images.avatar}
+                                           className="home-avatar"
+                                    />
+                                    <Text className="home-user-name">Hi, {displayName} 👋</Text>
+                                </View>
+                                <Image source={icons.add} className="home-add-icon"/>
+                            </View>
+                            <View className="home-balance-card">
+                                <Text className="home-balnce-label">Balance</Text>
+                                <View className="home-balance-row">
+                                    <Text className="home-balance-amount">
+                                        {formatCurrency(HOME_BALANCE.amount)}
+                                    </Text>
+                                    <Text className="home-balance-date">
+                                        {dayjs(HOME_BALANCE.nextRenewalDate).format('MM/DD')}
+                                    </Text>
+                                </View>
+
+                            </View>
+                            <View className="mb-5">
+
+                                <Listheading title="Upcoming" />
+                                <FlatList
+                                    data={UPCOMING_SUBSCRIPTIONS} renderItem={({item})=>(<UpcomingSubscriptionCard {...item} />
+                                )}
+                                    keyExtractor={(item)=> item.id}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    ListEmptyComponent={<Text className="home-empty-state">No upcoming renewals yet </Text>}
+                                />
+                            </View>
+                            <Listheading title="All Subscriptions" />
+                        </>
+                    )}
+                    data={HOME_SUBSCRIPTIONS}
                     keyExtractor={(item)=> item.id}
                     renderItem={({ item })=>(
                         <SubscriptionCard {...item} expanded={expandedSubscriptionId
