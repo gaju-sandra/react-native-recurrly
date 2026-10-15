@@ -11,7 +11,6 @@ const RecommendationCard = ({recommendation}: {recommendation: Recommendation}) 
     if (recommendation.kind === 'save') {
         return (
             <View className="insights-history-card items-start">
-                <Text className="text-2xl">💡</Text>
                 <View className="insights-history-copy">
                     <Text className="insights-history-name">{recommendation.title}</Text>
                     <Text className="insights-history-meta">{recommendation.body}</Text>

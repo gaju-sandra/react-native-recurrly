@@ -232,9 +232,6 @@
         @apply flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-1;
     }
 
-    .search-icon {
-        @apply text-base opacity-60;
-    }
 
     .search-input {
         @apply flex-1 py-3 text-base font-sans-medium text-primary;

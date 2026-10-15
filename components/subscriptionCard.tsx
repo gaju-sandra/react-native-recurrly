@@ -4,6 +4,7 @@ import SubscriptionIcon from "@/components/SubscriptionIcon";
 import {formatCurrency, formatStatusLabel, formatSubscriptionDateTime} from "@/lib/utils";
 import clsx from "clsx";
 import {icons} from "@/constants/icons";
+import {colors} from "@/constants/theme";
 import {getNextRenewalDate} from "@/lib/subscriptions";
 
 const SubscriptionCard = ({name, price, currency, frequency,
@@ -20,7 +21,8 @@ const SubscriptionCard = ({name, price, currency, frequency,
             backgroundColor: color}: undefined}>
       <View className= "sub-head">
           <View className="sub-main">
-              <SubscriptionIcon name={name} fallback={icons.wallet} className="sub-icon" />
+              <SubscriptionIcon name={name} fallback={icons.wallet} className="sub-icon"
+                                backgroundColor={expanded ? colors.subscription : color ?? colors.card} />
               <View className="sub-copy">
                   <Text numberOfLines={1}className="sub-title">
                       {name}

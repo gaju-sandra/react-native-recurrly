@@ -5,7 +5,6 @@ import {colors} from "@/constants/theme";
 const SearchBar = ({value, onChangeText, placeholder = 'Search'}: SearchBarProps) => {
   return (
     <View className="search-bar">
-        <Text className="search-icon">🔍</Text>
         <TextInput
             className="search-input"
             style={{color: colors.primary}}
